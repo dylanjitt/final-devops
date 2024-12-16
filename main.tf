@@ -43,22 +43,7 @@ resource "aws_instance" "chatty_llama" {
     volume_size = 20
   }
 
-  user_data = <<-EOT
-              #!/bin/bash
-              sudo apt update -y
-              curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-              source $HOME/.cargo/env
-              sudo apt install -y git python3-pip python3.12-venv
-              git clone https://github.com/dylanjitt/chatty-llama.git
-              sudo chown -R ubuntu:ubuntu chatty-llama/
-              cd chatty-llama/
-              make install-huggingface-cli
-              python3 -m venv venv
-              source venv/bin/activate
-              export HF_TOKEN=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
-              make download-model
-              make chatty-llama
-            EOT
+
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
   tags = {
