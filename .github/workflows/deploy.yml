@@ -33,25 +33,9 @@ jobs:
     - name: Initialize Terraform
       run: terraform init
 
-    - name: Apply Terraform
-      run: terraform apply -auto-approve
+    - name: Plan Terraform
+      run: terraform plan  -var="huggingface_token=${{ secrets.HF_TOKEN }}" -auto-approve
 
-    - name: SSH into EC2 and Execute Commands
-      run: |
-        chmod 400 chatty_llama_key.pem
-        EC2_IP=$(terraform output -raw instance_ip)
-        ssh -o StrictHostKeyChecking=no -i chatty_llama_key.pem ubuntu@$EC2_IP << 'EOF'
-          sudo apt update -y
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-          source $HOME/.cargo/env
-          sudo apt install -y git python3-pip python3.12-venv
-          git clone https://github.com/dylanjitt/chatty-llama.git
-          sudo chown -R ubuntu:ubuntu chatty-llama/
-          cd chatty-llama/
-          python3 -m venv venv
-          source venv/bin/activate
-          make install-huggingface-cli
-          export HF_TOKEN=${{ secrets.HF_TOKEN }}
-          make download-model
-          make chatty-llama
-        EOF
+    - name: Apply Terraform
+      run: terraform apply -var="huggingface_token=${{ secrets.HF_TOKEN }}" -auto-approve
+
