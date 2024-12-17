@@ -3,18 +3,10 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "ec2_key" {
-  key_name   = "chatty_llama_key"
-  public_key = tls_private_key.example.public_key_openssh
+  key_name   = "macgod_key"
+  public_key = file("macgod.pub")
 }
 
-resource "tls_private_key" "example" {
-  algorithm = "RSA"
-}
-
-resource "local_file" "private_key" {
-  content  = tls_private_key.example.private_key_pem
-  filename = "chatty_llama_key.pem"
-}
 resource "aws_security_group" "allow_ssh" {
   name        = "allow_ssh"
   description = "Allow SSH access"
@@ -22,6 +14,13 @@ resource "aws_security_group" "allow_ssh" {
   ingress {
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -34,8 +33,16 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
+variable "huggingface_token" {
+  description = "HuggingFace API Token"
+  type        = string
+  sensitive   = true
+}
+
+
+
 resource "aws_instance" "chatty_llama" {
-  ami           = "ami-0e2c8caa4b6378d8c" # Ubuntu 22.04 AMI for us-east-1
+  ami           = "ami-005fc0f236362e99f" # Amazon Linux AMI for us-east-1
   instance_type = "t2.micro"
   key_name      = aws_key_pair.ec2_key.key_name
 
@@ -43,6 +50,9 @@ resource "aws_instance" "chatty_llama" {
     volume_size = 20
   }
 
+  user_data = templatefile("userdata.sh", {
+    huggingface_token = var.huggingface_token
+  })
 
   vpc_security_group_ids = [aws_security_group.allow_ssh.id]
 
@@ -55,8 +65,6 @@ output "instance_ip" {
   value = aws_instance.chatty_llama.public_ip
 }
 
-output "key_file" {
-  value = local_file.private_key.filename
-}
+
 
 
