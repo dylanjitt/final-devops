@@ -1,0 +1,41 @@
+name: Destroy Chatty Llama
+
+on: 
+  workflow_dispatch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+    steps:
+    # Step 1: Checkout Code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Configure AWS Credentials
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    # Step 3: Setup Terraform (Simplified using HashiCorp's official action)
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.6.0  # Specify a version for consistency
+
+    # Step 4: Terraform Init
+    - name: Initialize Terraform
+      run: terraform init
+
+    # Step 5: Terraform Destroy (Cleanup Previous Infrastructure)
+    - name: Destroy Existing Infrastructure
+      run: terraform destroy -var="huggingface_token=${{ secrets.HF_TOKEN }}" -auto-approve
+      continue-on-error: true  # Allow pipeline to continue if no resources exist
