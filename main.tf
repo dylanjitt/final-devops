@@ -61,6 +61,17 @@ resource "aws_instance" "chatty_llama" {
   }
 }
 
+terraform {
+ backend "s3" {
+   bucket         = "final-bucket-dyl"
+   key            = "global/s3/terraform.tfstate"
+   region         = "us-east-1"
+   dynamodb_table = "final-tfstate"
+   encrypt        = true
+ }
+}
+
+
 output "instance_ip" {
   value = aws_instance.chatty_llama.public_ip
 }
